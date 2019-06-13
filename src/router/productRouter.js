@@ -109,7 +109,7 @@ router.get('/product/images/:image', (req,res) => {
 })
 //link image transport
 router.get('/transport/images/:image',(req,res) => {
-  res.sendFile(`${uploadProduct}/${req.params.image}`)
+  res.sendFile(`${uploadTransport}/${req.params.image}`)
 })
 //link image Home
 router.get('/home/images/:image',(req,res) => {
@@ -366,6 +366,18 @@ router.get('/home/show',(req,res) => {
 
     res.send(result)
   })
+})
+
+//edit image home
+router.patch('/home/edit/:id', uploadsHome.single('image'),(req,res) => {
+  const sql = `UPDATE imageHome SET image  = '${req.file.filename}' WHERE id = '${req.params.id}'`
+
+  conn.query(sql, (err, result) => {
+      if (err) return res.send(err.mess)
+      
+      res.send(result)
+    
+    })
 })
 
 
