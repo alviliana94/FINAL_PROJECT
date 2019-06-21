@@ -1,5 +1,5 @@
 const router = require('express').Router()
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs') //untuk encrypt(kode di rahasiakan) password
 const isEmail = require('validator/lib/isEmail')
 const {sendMail} = require('../email/nodemailer')
 const conn = require('../connection/connection')
@@ -12,20 +12,20 @@ const uploadDir = path.join(__dirname + '/../uploads' )
 //create users
 router.post('/user/register', async (req, res) => { // CREATE USER
     var sql = `INSERT INTO user SET ?;` // Tanda tanya akan digantikan oleh variable data
-    var sql2 = `SELECT * FROM user;`
     var data = req.body 
-
+    
     // validasi untuk email
     if(!isEmail(req.body.email)) return res.send("Email is not valid")
     // ubah password yang masuk dalam bentuk hash
     req.body.password = await bcrypt.hash(req.body.password, 8)
-
+    
     conn.query(sql, data, (err, result) => {
-        if(err) return res.send(err.sqlMessage) // Error pada post data
-
-        // sendVerify(req.body.username, req.body.name, req.body.email)
-        sendMail(req.body.username, req.body.name, req.body.email)
-
+      if(err) return res.send(err.sqlMessage) // Error pada post data
+      
+      // sendVerify(req.body.username, req.body.name, req.body.email)
+      sendMail(req.body.username, req.body.email)
+      var sql2 = `update user set role = '2' where id = ${result.insertId}`
+      
         conn.query(sql2, (err, result) => {
             if(err) return res.send(err) // Error pada select data
 
@@ -45,7 +45,7 @@ router.get('/verify', (req, res) => {
         conn.query(sql2, (err, result) => {
             if(err) return res.send(err.sqlMessage)
 
-            res.send('<h1>Verifikasi berhasil</h1>')
+            res.send('<a href="http://localhost:3000/login">Verifikasi berhasil,klik untuk login</a>')
         })
     })
 })
@@ -54,7 +54,7 @@ router.get('/verify', (req, res) => {
 router.post('/users/login', (req, res) => { 
     const {username, password} = req.body
 
-    const sql = `SELECT * FROM user WHERE username = '${username}'`
+    const sql = `SELECT * FROM user WHERE username = '${username}' or email = '${username}'`
 
     conn.query(sql, async (err, result) => {
         if(err) return res.send(err.message) 
@@ -132,7 +132,8 @@ router.post('/avatar/uploads/:userid', upload.single('avatar'), (req, res) => {
     const sql = `UPDATE user SET avatar  = '${req.file.filename}' WHERE id = '${req.params.userid}'`
     
     conn.query(sql, (err, result) => {
-        if (err) return res.send(err.sqlMessage)
+        if (err) return console.log(err);
+        
         
         res.send({filename: req.file.filename})
     })
@@ -173,15 +174,18 @@ router.get('/users/profile/:userid', (req,res) => {
 
     conn.query(sql,data, (err,result) => {
         if(err) return res.send(err.message)
+        
 
-        const user = result[0] // Result berupa array of object
+        result.map(item =>{
+          item.avatar = `http://localhost:1995/users/avatar/${item.avatar}?v=` +Date.now()
+        })
 
-        if(!user) return res.status(400).send("User not found") // User tidak ditemukan
+        console.log(result);
+        
 
-        res.send({
-            user,
-            photo: `http://localhost:1995/users/avatar/${user.avatar}?v=` +Date.now()
-})
+        if(!result[0]) return res.status(400).send("User not found") // User tidak ditemukan
+
+        res.send(result)
         
     })
 })
@@ -193,6 +197,8 @@ router.patch('/users/:userid', (req, res) => {
     const data = [req.body]
 
     conn.query(sql, data, (err, result) => {
+      console.log(req.body);
+      
         if (err) return res.send(err.message)
         
         conn.query(sql2,(err,result) => {
@@ -226,8 +232,8 @@ router.get("/kodepos", (req, res) => {
     });
   });
   //detail address user
-  router.get("/user/info/:iduser", (req, res) => {
-    const sql = `SELECT address,kelurahan,kecamatan,kabupaten,provinsi,tbl_kodepos.kodepos,phone_number FROM user JOIN tbl_kodepos ON user.kodepos = tbl_kodepos.id WHERE user.id = '${
+  router.get("/user/address/:iduser", (req, res) => {
+    const sql = `SELECT kelurahan,kecamatan,kabupaten,provinsi,tbl_kodepos.kodepos FROM user JOIN tbl_kodepos ON user.kodepos_id = tbl_kodepos.id WHERE user.id = '${
       req.params.iduser
     }'`;
   
@@ -285,7 +291,7 @@ router.get("/kodepos", (req, res) => {
   });
   //show kodepos
   router.get("/kodepos/:kelurahan", (req, res) => {
-    const sql = `SELECt id,kodepos FROM tbl_kodepos WHERE kelurahan = '${
+    const sql = `SELECT id,kodepos FROM tbl_kodepos WHERE kelurahan = '${
       req.params.kelurahan
     }'`;
   

@@ -1,21 +1,23 @@
-const express = require('express')
-const cors = require("cors");
+const express = require('express') //untuk import framework express
+const cors = require("cors"); // untuk connect / express
 const userRouter = require('./router/userRouter')
 const productRouter = require('./router/productRouter')
+const placeRouter = require('./router/placeRouter')
 
-const ex = express()
+const app = express()
 const port = process.env.PORT
 
-ex.get('/', (req,res) => {
+app.get('/', (req,res) => {
     res.send(`<h1>API runnning on ${port}</h1>`)
 })
 
-ex.use(cors())
-ex.use(express.json())
-ex.use(userRouter)
-ex.use(productRouter)
+app.use(cors())
+app.use(express.json())
+app.use(userRouter)
+app.use(productRouter)
+app.use(placeRouter)
 
-ex.listen(port, () => {
+app.listen(port, () => {
     console.log("Running at ", port);
     
 })

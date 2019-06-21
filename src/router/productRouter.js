@@ -297,11 +297,24 @@ router.patch('/pricelist/edit/:idlist', (req,res) => {
 })
 
 //price
-router.get("/price", (req, res) => {
-    const data = req.body
-    const sql = `SELECT p.category_name AS PET, t.transport_name AS TRANSPORT, w.weight_range AS WEIGHT,price AS PRICE FROM travel_price tp JOIN pet_category p ON p.id = tp.pet_category_id JOIN transport_category t ON t.id = tp.transport_category_id JOIN weight_category w ON w.id = tp.weight_category_id WHERE pet_category_id = ${data.pet} AND transport_category_id = ${data.transport} AND weight_category_id = ${data.weight}`;
+router.get("/price/:pet/:transport/:size", (req, res) => {
+    const data = req.params
+    const sql = `SELECT price FROM travel_price tp WHERE pet_category_id = ${data.pet} AND transport_category_id = ${data.transport} AND size_category_id = ${data.size}`;
+
   
     conn.query(sql,(err, result) => {
+      
+      if (err) return res.send(err.sqlMessage);
+      
+      res.send(result);
+    });
+  });
+router.get("/product/:product/:transport/:size", (req, res) => {
+    const data = req.params
+    const sql = `SELECT price FROM product_price  WHERE product_name_id = ${data.product} AND product_category_id = ${data.product} AND product_size_id = ${data.size};`;
+  
+    conn.query(sql,(err, result) => {
+      
       if (err) return res.send(err.sqlMessage);
       
       res.send(result);
